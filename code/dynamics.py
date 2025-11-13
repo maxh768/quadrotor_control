@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 def nonlinear_dynamics(t, state, u, params):
     """
@@ -17,13 +18,13 @@ def nonlinear_dynamics(t, state, u, params):
     dx = v_x
     dy = v_y
     dtheta = omega
-    dv_x = ( -2 * (T1 + T2) * np.sin(theta) \
+    dv_x = ( -1 * (T1 + T2) * np.sin(theta) \
             - beta * v_x * np.sqrt(v_x**2 + v_y**2) ) / m
     
-    dv_y = ( ( 2 * (T1 + T2) * np.cos(theta) \
+    dv_y = ( ( 1 * (T1 + T2) * np.cos(theta) \
             - beta * v_y * np.sqrt(v_x**2 + v_y**2) ) / m ) - g
         
-    omega_dot = 2 * (T1 - T2) * l / I
+    omega_dot = 1 * (T1 - T2) * l / I
 
     dx = np.array([dx, dy, dtheta, dv_x, dv_y, omega_dot])
 
@@ -69,7 +70,7 @@ def linear_dynamics(t, x, u, A, B, xbar, ubar):
     return dx
 
 def get_ref(t):
-    radius = 0.5
+    radius = 0.2
     period = 10.0
     omega = 2 * np.pi / period
     x_ref = radius * np.cos(omega * t)
@@ -80,6 +81,12 @@ def LQR_nonlinear_dynamics(t, x, K, G, params, xbar, ubar):
     ref = get_ref(t)
     u = -K @ (x - xbar) + ubar + G @ ref
     dx = nonlinear_dynamics(t, x, u, params)
+    return dx
+
+def LQR_linear_dynamics(t, x, K, G, A, B, xbar, ubar):
+    ref = get_ref(t)
+    u = -K @ (x - xbar) + ubar + G @ ref
+    dx = A @ (x - xbar) + B @ (u - ubar)
     return dx
 
 if __name__ == "__main__":
@@ -96,6 +103,14 @@ if __name__ == "__main__":
     A, B = linearize_system(0, x, u, params)
     print("A:", A)
     print("B:", B)
+
+    t = np.linspace(0, 20, 100)
+    r = get_ref(t)
+
+    # fig, ax = plt.subplots()
+    # ax.plot(r[0, :], r[1, :], label='Reference Trajectory')
+    # plt.show()
+    
 
 
 
