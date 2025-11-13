@@ -1,6 +1,7 @@
 import numpy as np
 from dynamics import *
 from scipy.linalg import solve_continuous_are
+from scipy.signal import place_poles
 
 def lqr(A, B, Q, R):
     # Solve the continuous time algebraic Riccati equation
@@ -25,10 +26,20 @@ def get_gains(params, x_eq, u_eq, Q, R, C):
     K = lqr(A, B, Q, R)
     G = tracking_gain(A, B, K, C)
 
+    # observer gains
+    # need six poles, for now just use purely real poles
+    poles_real_part = np.linspace(-10, -15, 6)
+    # poles_im_part = 
+    L_transpose = place_poles(A.T, C.T, poles_real_part).gain_matrix
+    L = L_transpose.T
+
+
+
+
     A_cl = A - B @ K
     B_cl = B @ G
 
-    return A_cl, B_cl, K, G
+    return A_cl, B_cl, K, G, L
 
 
 if __name__ == "__main__":
@@ -45,9 +56,10 @@ if __name__ == "__main__":
     Q = np.eye(6)
     R = np.eye(2)
 
-    A_cl, B_cl, K, G = get_gains(params, x_eq, u_eq, Q, R)
+    C = np.array([[1, 0, 0, 0, 0, 0],
+              [0, 1, 0, 0, 0, 0]])
 
-    print(A_cl)
+    A_cl, B_cl, K, G, L = get_gains(params, x_eq, u_eq, Q, R, C)
 
     A, B = linearize_system(0, x_eq, u_eq, params)
     eig_OL , _ = np.linalg.eig(A)

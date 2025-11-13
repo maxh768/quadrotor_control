@@ -77,17 +77,91 @@ def get_ref(t):
     y_ref = radius * np.sin(omega * t)
     return np.array([x_ref, y_ref])
 
-def LQR_nonlinear_dynamics(t, x, K, G, params, xbar, ubar):
+def LQR_nonlinear_dynamics(t, x, x_hat, C, K, G, params, xbar, ubar):
     ref = get_ref(t)
-    u = -K @ (x - xbar) + ubar + G @ ref
+    # sensed output
+    y = C @ x
+
+    # controller gain from reconstructed x_hat
+    u = -K @ (x_hat - xbar) + ubar + G @ ref
+
+    # integrate real x
     dx = nonlinear_dynamics(t, x, u, params)
     return dx
 
-def LQR_linear_dynamics(t, x, K, G, A, B, xbar, ubar):
+def LQR_linear_dynamics(t, x, x_hat, K, G, A, B, C, xbar, ubar):
     ref = get_ref(t)
-    u = -K @ (x - xbar) + ubar + G @ ref
+    # sensed output
+    y = C @ x
+
+    # get controller gain with reconstructed x_hat
+    u = -K @ (x_hat - xbar) + ubar + G @ ref
+
+    # integrate the real x variable
     dx = A @ (x - xbar) + B @ (u - ubar)
     return dx
+
+
+def closed_loop_system_linear(t, X_full, params, A, B, C, K, G, L, xbar, ubar):
+    # hard coded dims
+    n = 6
+    m = 2
+
+    # states
+    x_real = X_full[:n]
+    x_hat = X_full[n:]
+
+    # reference signal
+    ref = get_ref(t)
+
+    # sensed output
+    y = C @ x_real
+
+    # reconstructed output
+    y_hat = C @ x_hat
+
+    # get control from reconstructed x_hat
+    u = -K @ (x_hat - xbar) + ubar + G @ ref
+
+    # integrate observer and real system with given u
+    dx_real = A @ (x_real - xbar) + B @ (u - ubar)
+    dx_hat = A @ (x_hat - xbar) + B @ (u - ubar) + L @ (y - y_hat)
+
+    dx_stacked = np.concatenate([dx_real, dx_hat])
+
+    return dx_stacked
+
+def closed_loop_system(t, X_full, params, A, B, C, K, G, L, xbar, ubar):
+    # same thing as linear, use nonlinear dynamics for dx_real
+
+    # hard coded dims
+    n = 6
+    m = 2
+
+    # states
+    x_real = X_full[:n]
+    x_hat = X_full[n:]
+
+    # reference signal
+    ref = get_ref(t)
+
+    # sensed output
+    y = C @ x_real
+
+    # reconstructed output
+    y_hat = C @ x_hat
+
+    # get control from reconstructed x_hat
+    u = -K @ (x_hat - xbar) + ubar + G @ ref
+
+    # integrate observer and real system with given u
+    dx_real = nonlinear_dynamics(t, x_real, u, params)
+    dx_hat = A @ (x_hat - xbar) + B @ (u - ubar) + L @ (y - y_hat)
+
+    dx_stacked = np.concatenate([dx_real, dx_hat])
+
+    return dx_stacked
+
 
 if __name__ == "__main__":
     m = 1.4

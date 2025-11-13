@@ -39,21 +39,22 @@ R = np.eye(2) * 0.1
 C = np.array([[1, 0, 0, 0, 0, 0],
               [0, 1, 0, 0, 0, 0]])
 
-A_cl, B_cl, K, G = get_gains(params, x_eq, u_eq, Q, R, C)
+A_cl, B_cl, K, G, L = get_gains(params, x_eq, u_eq, Q, R, C)
 
 
 # initial conditions
-x0 = np.random.uniform(-3, 3, 6)
+x0 = np.random.uniform(-3, 3, 12)
 
 t_span = (0, 15)
 t_eval = np.linspace(t_span[0], t_span[1], 600)
 
-sol = solve_ivp(LQR_nonlinear_dynamics, t_span, x0, args=(K, G, params, x_eq, u_eq), t_eval=t_eval)
+sol = solve_ivp(closed_loop_system, t_span, x0, args=(params, A, B, C, K, G, L, x_eq, u_eq), t_eval=t_eval)
 
-sol_linear = solve_ivp(LQR_linear_dynamics, t_span, x0, args=(K, G, A, B, x_eq, u_eq), t_eval=t_eval)
+sol_linear = solve_ivp(closed_loop_system_linear, t_span, x0, args=(params, A, B, C, K, G, L, x_eq, u_eq), t_eval=t_eval)
 
-y = sol.y
-y_linear = sol_linear.y
+y = sol.y[:6]
+
+y_linear = sol_linear.y[:6]
 
 fig, ax = plt.subplots(6, 1, figsize=(5, 8))
 state_names = [r'$x$', r'$y$', r'$\theta$', r'$v_x$', r'$v_y$', r'$\omega$']
