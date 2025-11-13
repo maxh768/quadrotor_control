@@ -11,18 +11,24 @@ def lqr(A, B, Q, R):
 
     return K
 
-def form_closed_loop_system(params, x_eq, u_eq, Q, R):
+def tracking_gain(A, B, K, C):
+    den = C @ np.linalg.inv(B @ K - A) @ B
+    G = np.linalg.inv(den)
+    return G
+
+def get_gains(params, x_eq, u_eq, Q, R, C):
     """
     Compute the closed-loop system matrices A_cl, B_cl
     for the linearized system with LQR controller
     """
     A, B = linearize_system(0, x_eq, u_eq, params)
     K = lqr(A, B, Q, R)
+    G = tracking_gain(A, B, K, C)
 
     A_cl = A - B @ K
+    B_cl = B @ G
 
-    return A_cl, K
-
+    return A_cl, B_cl, K, G
 
 
 if __name__ == "__main__":
@@ -39,7 +45,7 @@ if __name__ == "__main__":
     Q = np.eye(6)
     R = np.eye(2)
 
-    A_cl = form_closed_loop_system(params, x_eq, u_eq, Q, R)
+    A_cl, B_cl, K, G = get_gains(params, x_eq, u_eq, Q, R)
 
     print(A_cl)
 

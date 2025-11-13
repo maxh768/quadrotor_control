@@ -1,6 +1,6 @@
 import numpy as np
 from dynamics import *
-from stabilizing_controller import form_closed_loop_system
+from controller import get_gains
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
 import niceplots
@@ -22,7 +22,9 @@ u_eq = np.array([m * g / 2, m * g / 2])
 # optimal control weighting
 Q = np.eye(6)
 R = np.eye(2) * 0.1
-A_cl, K = form_closed_loop_system(params, x_eq, u_eq, Q, R)
+C = np.array([[1, 0, 0, 0, 0, 0],
+              [0, 1, 0, 0, 0, 0]])
+A_cl, B_cl, K, G = get_gains(params, x_eq, u_eq, Q, R, np.eye(6))
 B_cl = 0
 
 # initial conditions

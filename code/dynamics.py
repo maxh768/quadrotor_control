@@ -68,8 +68,17 @@ def linear_dynamics(t, x, u, A, B, xbar, ubar):
     dx = A @ (x - xbar) + B @ (u - ubar)
     return dx
 
-def LQR_nonlinear_dynamics(t, x, k, params, xbar, ubar):
-    u = - k @ (x - xbar) + ubar
+def get_ref(t):
+    radius = 0.5
+    period = 10.0
+    omega = 2 * np.pi / period
+    x_ref = radius * np.cos(omega * t)
+    y_ref = radius * np.sin(omega * t)
+    return np.array([x_ref, y_ref])
+
+def LQR_nonlinear_dynamics(t, x, K, G, params, xbar, ubar):
+    ref = get_ref(t)
+    u = -K @ (x - xbar) + ubar + G @ ref
     dx = nonlinear_dynamics(t, x, u, params)
     return dx
 
